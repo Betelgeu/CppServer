@@ -3,9 +3,9 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
-#include "util.h"
-#include "InetAddress.h"
-#include "Socket.h"
+#include "src/util.h"
+#include "src/InetAddress.h"
+#include "src/Socket.h"
 
 #define BUFFER_SIZE 1024 
 

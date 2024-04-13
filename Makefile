@@ -3,12 +3,12 @@ CFLAGS := -std=c++11 -Wall -g
 
 all: server client
 
-server: util.o server.o Epoll.o InetAddress.o Socket.o Channel.o
+server: server.o src/Epoll.o src/InetAddress.o src/Socket.o src/Channel.o src/util.o
 	@echo "Linking server executable..."
 	$(CC) $(CFLAGS) $^ -o $@
 	@echo "Server executable linked successfully!"
 
-client: util.o client.o Socket.o InetAddress.o
+client: client.o src/Socket.o src/InetAddress.o src/util.o
 	@echo "Linking client executable..."
 	$(CC) $(CFLAGS) $^ -o $@
 	@echo "Client executable linked successfully!"
@@ -20,5 +20,5 @@ client: util.o client.o Socket.o InetAddress.o
 
 clean:
 	@echo "Cleaning up..."
-	rm -f *.o server client
+	rm -f *.o src/*.o server client
 	@echo "Clean up complete!"
