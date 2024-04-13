@@ -7,6 +7,7 @@
 #include "Epoll.h"
 #include "InetAddress.h"
 #include "Socket.h"
+#include "Channel.h"
 
 #define MAX_EVENTS 1024
 #define READ_BUFFER 1024
@@ -27,25 +28,29 @@ int main() {
     // create epoll
     Epoll *ep = new Epoll();
     serv_sock->setnonblocking();
-    ep->addFd(serv_sock->getFd(), EPOLLIN | EPOLLET);
+    Channel *servChannel = new Channel(ep, serv_sock->getFd());
+    servChannel->enableReading();
 
     while (true) {
-        std::vector<epoll_event> events = ep->poll();
-        int nfds = events.size();
+        std::vector<Channel*> activeChannels = ep->poll();
+        int nfds = activeChannels.size();
 
         for(int i = 0; i < nfds; ++i){
             // accept a new connection
-            if(events[i].data.fd == serv_sock->getFd()){        //新客户端连接
+            int chfd = activeChannels[i]->getFd();
+            if(chfd == serv_sock->getFd()){        //新客户端连接
                 InetAddress *clnt_addr = new InetAddress();      //会发生内存泄露！没有delete
                 Socket *clnt_sock = new Socket(serv_sock->accept(clnt_addr));       //会发生内存泄露！没有delete
                 printf("new client fd %d! IP: %s Port: %d\n", clnt_sock->getFd(), inet_ntoa(clnt_addr->addr.sin_addr), ntohs(clnt_addr->addr.sin_port));
                 clnt_sock->setnonblocking();
-                ep->addFd(clnt_sock->getFd(), EPOLLIN | EPOLLET);
+                Channel *clntChannel = new Channel(ep, clnt_sock->getFd());
+                clntChannel->enableReading();
             }
             // read from and write to the connection(echo server)
-            else if(events[i].events & EPOLLIN){      //可读事件
-                handleReadEvent(events[i].data.fd);
-            } else{         //其他事件，之后的版本实现
+            else if(activeChannels[i]->getRevents() & EPOLLIN){      //可读事件
+                handleReadEvent(activeChannels[i]->getFd());
+            }
+            else{         //其他事件，之后的版本实现
                 printf("something else happened\n");
             }
         }
