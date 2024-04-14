@@ -8,26 +8,20 @@
 #include "Socket.h"
 #include "InetAddress.h"
 #include "Channel.h"
+#include "Acceptor.h"
 
 #define READ_BUFFER 1024
 
-Server::Server(EventLoop *_loop) : loop(_loop){
-    // set socket
-    Socket *serv_sock = new Socket();
-    InetAddress *serv_addr = new InetAddress("127.0.0.1", 8888);
-    serv_sock->bind(serv_addr);
-    serv_sock->listen(); 
-    serv_sock->setnonblocking();
-
-    Channel *servChannel = new Channel(loop, serv_sock->getFd());
-    std::function<void()> cb = std::bind(&Server::newConnection, this, serv_sock);
-    servChannel->setCallback(cb);
-    servChannel->enableReading();
+Server::Server(EventLoop *_loop) : loop(_loop), acceptor(nullptr){
+    // set Acceptor
+    acceptor = new Acceptor(loop);
+    std::function<void(Socket*)> cb = std::bind(&Server::newConnection, this, std::placeholders::_1);
+    acceptor->setNewConnectionCallback(cb);
 }
 
 Server::~Server()
 {
-    
+    delete acceptor;
 }
 
 void Server::handleReadEvent(int sockfd){
@@ -57,7 +51,7 @@ void Server::newConnection(Socket *serv_sock){
     Socket *clnt_sock = new Socket(serv_sock->accept(clnt_addr));       //会发生内存泄露！没有delete
     printf("new client fd %d! IP: %s Port: %d\n", clnt_sock->getFd(), inet_ntoa(clnt_addr->addr.sin_addr), ntohs(clnt_addr->addr.sin_port));
     clnt_sock->setnonblocking();
-    // 把新连接的客户端socket注册到EventLoop中
+    // 注册新连接的客户端socket
     Channel *clntChannel = new Channel(loop, clnt_sock->getFd());
     std::function<void()> cb = std::bind(&Server::handleReadEvent, this, clnt_sock->getFd());
     clntChannel->setCallback(cb);
