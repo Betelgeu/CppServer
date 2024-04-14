@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "Acceptor.h"
 #include "Socket.h"
 #include "InetAddress.h"
@@ -24,7 +25,14 @@ Acceptor::~Acceptor(){
 }
 
 void Acceptor::acceptConnection(){
-    newConnectionCallback(sock);
+    // 1. acceptor接收新连接，打印
+    InetAddress *clnt_addr = new InetAddress();      
+    Socket *clnt_sock = new Socket(sock->accept(clnt_addr));      
+    printf("new client fd %d! IP: %s Port: %d\n", clnt_sock->getFd(), inet_ntoa(clnt_addr->getAddr().sin_addr), ntohs(clnt_addr->getAddr().sin_port));
+    clnt_sock->setnonblocking();
+    // 2. 回调函数转回server，由server维护new Connection
+    newConnectionCallback(clnt_sock);
+    delete clnt_addr;
 }
 
 void Acceptor::setNewConnectionCallback(std::function<void(Socket*)> _cb){

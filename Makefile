@@ -3,7 +3,7 @@ CFLAGS := -std=c++11 -Wall -g
 
 all: server client
 
-server: server.o src/Epoll.o src/InetAddress.o src/Socket.o src/Channel.o src/util.o src/EventLoop.o src/Server.o src/Acceptor.o
+server: server.o src/Epoll.o src/InetAddress.o src/Socket.o src/Channel.o src/util.o src/EventLoop.o src/Server.o src/Acceptor.o src/Connection.o
 	@echo "Linking server executable..."
 	$(CC) $(CFLAGS) $^ -o $@
 	@echo "Server executable linked successfully!"
