@@ -2,9 +2,6 @@ client
 server
 *.o
 .vscode/
-test.cpp
-test
-ThreadPoolTest.cpp
-thread_test
+build/
 temp.log
 diff.sh
