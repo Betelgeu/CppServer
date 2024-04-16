@@ -7,16 +7,15 @@ private:
     int fd;
 public:
     Socket();
-    Socket(int);
+    Socket(int _fd);
     ~Socket();
 
     void bind(InetAddress*);
     void listen();
     void connect(InetAddress*);
-    void setnonblocking();
-
     int accept(InetAddress*);
-
+    
+    void setnonblocking();
     int getFd();
 };
 
