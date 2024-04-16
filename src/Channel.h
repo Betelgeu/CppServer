@@ -1,5 +1,5 @@
 #pragma once
-#include <sys/epoll.h>
+#include <stdint.h>
 #include <functional>
 
 class Socket;
@@ -12,8 +12,7 @@ private:
 
     uint32_t events; // events that we want to listen
     uint32_t ready;  // events that are ready
-    bool inEpoll;
-    bool useThreadPool;
+    bool inEpoll;    // whether the channel is in epoll
     // callback depend on ready event type when events are ready
     std::function<void()> readCallback;
     std::function<void()> writeCallback;
@@ -33,6 +32,5 @@ public:
 
     void setReady(uint32_t);
     void setReadCallback(std::function<void()>);
-    void setUseThreadPool(bool use = true);
 };
 

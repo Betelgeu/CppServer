@@ -2,7 +2,6 @@
 #include <string.h>
 #include <unistd.h>
 #include "src/util.h"
-#include "src/InetAddress.h"
 #include "src/Socket.h"
 #include "src/Buffer.h"
 

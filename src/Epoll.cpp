@@ -42,10 +42,8 @@ void Epoll::updateChannel(Channel *channel){
     if(!channel->getInEpoll()){
         errif(epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev) == -1, "epoll add error");
         channel->setInEpoll();
-        // debug("Epoll: add Channel to epoll tree success, the Channel's fd is: ", fd);
     } else{
         errif(epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &ev) == -1, "epoll modify error");
-        // debug("Epoll: modify Channel in epoll tree success, the Channel's fd is: ", fd);
     }
 }
 

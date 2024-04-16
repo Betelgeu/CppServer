@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "Acceptor.h"
 #include "Socket.h"
-#include "InetAddress.h"
 #include "Channel.h"
 #include "Server.h"
 
@@ -10,12 +9,13 @@ Acceptor::Acceptor(EventLoop *_loop) : loop(_loop), sock(nullptr), acceptChannel
     sock = new Socket();
     InetAddress *addr = new InetAddress("127.0.0.1", 8888);
     sock->bind(addr);
+    // acceptor使用阻塞式IO比较好，因为acceptor只负责接收新连接，不负责读写数据
+    // sock->setnonblocking();
     sock->listen(); 
     acceptChannel = new Channel(loop, sock->getFd());
     std::function<void()> cb = std::bind(&Acceptor::acceptConnection, this);
     acceptChannel->setReadCallback(cb);
     acceptChannel->enableRead();
-    acceptChannel->setUseThreadPool(false);
     delete addr;
 }
 
