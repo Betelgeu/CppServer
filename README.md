@@ -101,14 +101,16 @@ epoll的默认方式。当epoll_wait检测到其上有事件发生并将此事�
 1. 服务器一般只有一个main Reactor, 有很多个subReactor。Reactor主线程mainReactor对象通过epoll监听连接事件，收到事件后，通过Acceptor处理连接事件。
 2. 当Acceptor处理连接事件后，MainReactor将连接分配给subReactor。服务器管理一个线程池, 每一个subReactor由一个线程来负责Connection上的事件循环, 事件执行也在这个线程中完成。
 3. main Reactor只负责Acceptor建立新连接，然后将这个连接分配给一个sub Reactor。这里采用了最简单的hash算法实现全随机调度，即将新连接随机分配给一个subReactor。由于socket fd是一个int类型的整数，只需要用fd余subReactor数，即可以实现全随机调度。
-```c++
-int random = sock->getFd() % subReactors.size();    //调度策略：全随机
-Connection *conn = new Connection(subReactors[random], sock);   //分配给一个subReactor
-```
-1. 当有新事件发生时，SubReactor就会调用对应的handler进行各种事件处理。handler通过read读取数据，分发给后面的work线程处理。
-2. work线程池分配独立的work线程进行业务处理，并返回结果。handler收到响应的结果后，再通过send返回给client。
+   ```c++
+   int random = sock->getFd() % subReactors.size();    //调度策略：全随机
+   Connection *conn = new Connection(subReactors[random], sock);   //分配给一个subReactor
+   ```
+4. 当有新事件发生时，SubReactor就会调用对应的handler进行各种事件处理。handler通过read读取数据，分发给后面的work线程处理。
+5. work线程池分配独立的work线程进行业务处理，并返回结果。handler收到响应的结果后，再通过send返回给client。
 
-> 用生活案例来说明，则主从Reactor多线程模式 = 1个前台 + 多个服务员 + 多个厨师
+> 用生活案例来说明，则主从Reactor多线程模式 = 1个前台(Acceptor) + 多个服务员(subReactor)
+>
+> 由一个服务员接待一组各个客户
 
 # 架构
 
@@ -125,7 +127,7 @@ Connection *conn = new Connection(subReactors[random], sock);   //分配给一�
 - `Epoll`: 将`sys/epoll.h`的使用方法抽象成类，方便使用。并且使用了epoll的channel用法, 内核发出事件通知时，取出的user_data不是简单的fd，而是一个`Channel指针`，包含关于这个连接的更多信息(如回调函数)。
 - `EventLoop`: 不管是主线程Acceptor还是工作线程subReactor都是靠EventLoop驱动的，每个EventLoop都手持一个Epoll, EventLoop内部循环调用`Epoll::poll()`监听各自Channel数组上的事件，监听到活跃事件后就将活跃的Channel包装成数组返回给EventLoop,然后EventLoop遍历这个数组逐个触发其上事件。一个Server持有的EventLoop指针包括一个`mainReactor`(监听新连接)和一个组`SubReactor`(监听一组连接上的消息)。
 - `Socket`: 将`sys/socket.h`的使用方法抽象成类，方便使用。
-- `ThreadPool`: 线程池，为了避免服务器负载不稳定，这里采用了固定线程数的方法，即启动固定数量的工作线程，一般是CPU核数（物理支持的最大并发数），然后将任务添加到任务队列，工作线程不断主动取出任务队列的任务执行。
+- `ThreadPool`: 线程池，为了避免服务器负载不稳定，这里采用了固定线程数的方法，即启动固定数量的工作线程，一般是CPU核数（物理支持的最大并发数），然后将任务添加到任务队列，工作线程不断主动取出任务队列的任务执行。这里使用one thread per loop的模式，即一个subReactor对应一个线程，由这个线程处理subReactor中的各个事件。
 
 
 
